@@ -1,22 +1,23 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 from PIL import Image
 
-# 1. સાઇટનું ટાઇટલ અને હેડિંગ
+# 1. સાઇટનું ટાઇટલ
 st.set_page_config(page_title="સ્કૂલ એનાલિસિસ ટૂલ", page_icon="🏫")
 st.title("🏫 સ્કૂલ કામગીરી પત્રક એનાલિસિસ ટૂલ")
 st.write("તમારા સ્કૂલના લિસ્ટ કે પત્રકનો ફોટો અપલોડ કરો અને ટૂંકમાં વિશ્લેષણ મેળવો.")
 
-# 2. Gemini API Key સેટઅપ
+# 2. API Key
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
 except Exception:
     st.error("મહેરબાની કરીને Gemini API Key સેટ કરો.")
     st.stop()
 
-genai.configure(api_key=api_key)
+# નવું Client બનાવો
+client = genai.Client(api_key=api_key)
 
-# 3. મલ્ટીપલ ફાઈલ અપલોડર
+# 3. મલ્ટીપલ ફાઈલ અપલોડ
 uploaded_files = st.file_uploader(
     "શાળાની કામગીરીની યાદીના ફોટા અહીં અપલોડ કરો (એકસાથે ઘણા પણ સિલેક્ટ કરી શકો છો)",
     type=["jpg", "jpeg", "png"],
@@ -26,14 +27,11 @@ uploaded_files = st.file_uploader(
 if uploaded_files:
     st.write(f"**કુલ {len(uploaded_files)} ફાઈલ અપલોડ થઈ છે**")
 
-    # બધા ફોટા બતાવો
     for i, uploaded_file in enumerate(uploaded_files):
         image = Image.open(uploaded_file)
         st.image(image, caption=f"ફોટો {i+1}: {uploaded_file.name}", use_container_width=True)
 
     if st.button("બધાનું એનાલિસિસ કરો 🚀"):
-        model = genai.GenerativeModel('gemini-1.5-flash')
-
         prompt = """
         આ ફોટામાં આપેલા તમામ મુદ્દાઓને ધ્યાનથી વાંચો અને તેને માત્ર 3 કેટેગરીમાં વહેંચીને ટકાવારી (Percentage) સાથે ટૂંકું વિશ્લેષણ આપો:
         1. 📚 મૂળભૂત શિક્ષણ
@@ -55,7 +53,11 @@ if uploaded_files:
             with st.spinner(f"ફોટો {i+1} નું એનાલિસિસ થઈ રહ્યું છે..."):
                 try:
                     image = Image.open(uploaded_file)
-                    response = model.generate_content([prompt, image])
+                    
+                    response = client.models.generate_content(
+                        model="gemini-2.0-flash",
+                        contents=[prompt, image]
+                    )
                     
                     st.success(f"✅ ફોટો {i+1} ({uploaded_file.name}) નું એનાલિસિસ તૈયાર છે!")
                     st.markdown(response.text)
