@@ -1,8 +1,6 @@
 import streamlit as st
 from google import genai
 from PIL import Image
-import pandas as pd
-from io import BytesIO
 from datetime import datetime
 
 # ---------------- Page Config ----------------
@@ -18,10 +16,6 @@ except Exception:
     st.stop()
 
 client = genai.Client(api_key=api_key)
-
-# ---------------- Session State ----------------
-if "records" not in st.session_state:
-    st.session_state.records = []
 
 # ---------------- ૧. પ્રાધાન્યનો પ્રશ્ન ----------------
 st.subheader("૧. તમે શિક્ષણમાં શેનું પ્રાધાન્ય આપો છો?")
@@ -96,32 +90,5 @@ if priority != "પસંદ કરો":
                             st.markdown(analysis_text)
                             st.divider()
 
-                            # સેવ કરો (પણ બીજાને ન બતાવો)
-                            st.session_state.records.append({
-                                "તારીખ": datetime.now().strftime("%d-%m-%Y %H:%M"),
-                                "પ્રાધાન્ય": priority,
-                                "બાળકનું નામ": student_name,
-                                "ધોરણ": std,
-                                "ફાઈલનું નામ": uploaded_file.name,
-                                "એનાલિસિસ": analysis_text
-                            })
-
                         except Exception as e:
                             st.error(f"ફોટો {i+1} માં ભૂલ: {e}")
-
-# ---------------- Excel ડાઉનલોડ (ફક્ત ડાઉનલોડ બટન, ટેબલ નહીં) ----------------
-if st.session_state.records:
-    st.success(f"✅ કુલ {len(st.session_state.records)} રેસ્પોન્સ સેવ થયા છે")
-
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        df = pd.DataFrame(st.session_state.records)
-        df.to_excel(writer, index=False, sheet_name="Analysis")
-    excel_data = output.getvalue()
-
-    st.download_button(
-        label="📥 Excel ડાઉનલોડ કરો",
-        data=excel_data,
-        file_name=f"School_Analysis_{datetime.now().strftime('%d%m%Y_%H%M')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
