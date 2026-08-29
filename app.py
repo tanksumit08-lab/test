@@ -9,7 +9,7 @@ st.write("તમારા સ્કૂલના લિસ્ટ કે પત્
 
 # 2. Gemini API Key સેટઅપ (Streamlit Secrets માંથી)
 try:
-    api_key = st.secrets["AQ.Ab8RN6KeEFWBBFI5W_jYiPZcF6BPWO_h4iiSlMJvJdh5R2QHag"]
+    api_key = st.secrets["GEMINI_API_KEY"]
 except Exception:
     st.error("મહેરબાની કરીને Gemini API Key સેટ કરો.")
     st.stop()
