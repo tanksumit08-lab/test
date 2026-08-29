@@ -9,7 +9,7 @@ st.write("તમારા સ્કૂલના લિસ્ટ કે પત્
 
 # 2. Gemini API Key સેટअप (અહીં તમારી API Key મૂકવી અથવા Streamlit Secrets નો ઉપયોગ કરવો)
 # st.secrets ["GEMINI_API_KEY"] નો ઉપયોગ કરવો વધારે સુરક્ષિત છે.
-api_key = st.secrets.get("GEMINI_API_KEY", "")
+api_key = st.secrets.get("AQ.Ab8RN6J7j81JU4WvMo24Wqx15soyzRjp83hAoZq73ur1fCqbgw", "")
 
 if not api_key:
     st.error("મહેરબાની કરીને Gemini API Key સેટ કરો.")
