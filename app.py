@@ -7,7 +7,7 @@ st.set_page_config(page_title="સ્કૂલ એનાલિસિસ ટૂ�
 st.title("🏫 સ્કૂલ કામગીરી પત્રક એનાલિસિસ ટૂલ")
 st.write("તમારા સ્કૂલના લિસ્ટ કે પત્રકનો ફોટો અપલોડ કરો અને ટૂંકમાં વિશ્લેષણ મેળવો.")
 
-# 2. Gemini API Key સેટઅપ (Streamlit Secrets માંથી)
+# 2. Gemini API Key સેટઅપ
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
 except Exception:
@@ -16,44 +16,50 @@ except Exception:
 
 genai.configure(api_key=api_key)
 
-# 3. ફાઈલ અપલોડર
-uploaded_file = st.file_uploader("શાળાની કામગીરીની યાદીનો ફોટો અહીં અપલોડ કરો (JPG, PNG)", type=["jpg", "jpeg", "png"])
+# 3. મલ્ટીપલ ફાઈલ અપલોડર
+uploaded_files = st.file_uploader(
+    "શાળાની કામગીરીની યાદીના ફોટા અહીં અપલોડ કરો (એકસાથે ઘણા પણ સિલેક્ટ કરી શકો છો)",
+    type=["jpg", "jpeg", "png"],
+    accept_multiple_files=True
+)
 
-if uploaded_file is not None:
-    # અપલોડ કરેલો ફોટો બતાવો
-    image = Image.open(uploaded_file)
-    st.image(image, caption="અપલોડ કરેલ ફોટો", use_column_width=True)
-    
-    if st.button("એનાલિસિસ કરો 🚀"):
-        with st.spinner("એનાલિસિસ થઈ રહ્યું છે, કૃપા કરીને રાહ જુઓ..."):
-            try:
-                # Gemini 1.5 Flash મોડેલનો ઉપયોગ
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                
-                # તમારો ફિક્સ પ્રોમ્પ્ટ (સિસ્ટમ ઇન્સ્ટ્રક્શન)
-                prompt = """
-                આ ફોટામાં આપેલા તમામ મુદ્દાઓને ધ્યાનથી વાંચો અને તેને માત્ર 3 કેટેગરીમાં વહેંચીને ટકાવારી (Percentage) સાથે ટૂંકું વિશ્લેષણ આપો:
-                1. 📚 મૂળભૂત શિક્ષણ
-                2. 🏫 શૈક્ષણિક સુવિધા
-                3. 🎯 પ્રવૃત્તિ / વહીવટ / ઉજવણી
+if uploaded_files:
+    st.write(f"**કુલ {len(uploaded_files)} ફાઈલ અપલોડ થઈ છે**")
 
-                જવાબ માત્ર આ ફોર્મેટમાં આપો:
-                📚 મૂળભૂત શિક્ષણ: __ મુદ્દા — __%
-                🏫 શૈક્ષણિક સુવિધા: __ મુદ્દા — __%
-                🎯 પ્રવૃત્તિ / વહીવટ / ઉજવણી: __ મુદ્દા — __%
+    # બધા ફોટા બતાવો
+    for i, uploaded_file in enumerate(uploaded_files):
+        image = Image.open(uploaded_file)
+        st.image(image, caption=f"ફોટો {i+1}: {uploaded_file.name}", use_container_width=True)
 
-                પછી માત્ર 4–6 સરળ ગુજરાતી વાક્યોમાં સમજાવો કે બાળકના ભવિષ્ય માટે “મૂળભૂત શિક્ષણ” શા માટે સૌથી મહત્વનું છે.
-                
-                અંતે એક અસરકારક વાક્ય આપો:
-                “સુવિધા બાળકને સગવડ આપે છે, પરંતુ ગુણવત્તાયુક્ત શિક્ષણ બાળકનું ભવિષ્ય ઘડે છે.”
-                """
-                
-                # API Call
-                response = model.generate_content([prompt, image])
-                
-                # પરિણામ દર્શાવો
-                st.success("એનાલિસિસ તૈયાર છે!")
-                st.markdown(response.text)
-                
-            except Exception as e:
-                st.error(f"કંઈક ભૂલ આવી છે: {e}")
+    if st.button("બધાનું એનાલિસિસ કરો 🚀"):
+        model = genai.GenerativeModel('gemini-1.5-flash')
+
+        prompt = """
+        આ ફોટામાં આપેલા તમામ મુદ્દાઓને ધ્યાનથી વાંચો અને તેને માત્ર 3 કેટેગરીમાં વહેંચીને ટકાવારી (Percentage) સાથે ટૂંકું વિશ્લેષણ આપો:
+        1. 📚 મૂળભૂત શિક્ષણ
+        2. 🏫 શૈક્ષણિક સુવિધા
+        3. 🎯 પ્રવૃત્તિ / વહીવટ / ઉજવણી
+
+        જવાબ માત્ર આ ફોર્મેટમાં આપો:
+        📚 મૂળભૂત શિક્ષણ: __ મુદ્દા — __%
+        🏫 શૈક્ષણિક સુવિધા: __ મુદ્દા — __%
+        🎯 પ્રવૃત્તિ / વહીવટ / ઉજવણી: __ મુદ્દા — __%
+
+        પછી માત્ર 4–6 સરળ ગુજરાતી વાક્યોમાં સમજાવો કે બાળકના ભવિષ્ય માટે “મૂળભૂત શિક્ષણ” શા માટે સૌથી મહત્વનું છે.
+        
+        અંતે એક અસરકારક વાક્ય આપો:
+        “સુવિધા બાળકને સગવડ આપે છે, પરંતુ ગુણવત્તાયુક્ત શિક્ષણ બાળકનું ભવિષ્ય ઘડે છે.”
+        """
+
+        for i, uploaded_file in enumerate(uploaded_files):
+            with st.spinner(f"ફોટો {i+1} નું એનાલિસિસ થઈ રહ્યું છે..."):
+                try:
+                    image = Image.open(uploaded_file)
+                    response = model.generate_content([prompt, image])
+                    
+                    st.success(f"✅ ફોટો {i+1} ({uploaded_file.name}) નું એનાલિસિસ તૈયાર છે!")
+                    st.markdown(response.text)
+                    st.divider()
+                    
+                except Exception as e:
+                    st.error(f"ફોટો {i+1} માં ભૂલ: {e}")
