@@ -32,7 +32,7 @@ priority = st.radio(
     horizontal=True
 )
 
-# ---------------- ૨. વિદ્યાર્થીની વિગતો (પ્રાધાન્ય પસંદ કર્યા પછી જ) ----------------
+# ---------------- ૨. વિદ્યાર્થીની વિગતો ----------------
 if priority != "પસંદ કરો":
     st.subheader("૨. વિદ્યાર્થીની વિગતો")
 
@@ -44,7 +44,7 @@ if priority != "પસંદ કરો":
     with col2:
         std = st.selectbox("ધોરણ *", ["પસંદ કરો", "૬", "૭", "૮"])
 
-    # ---------------- ૩. ફાઈલ અપલોડ (નામ અને ધોરણ ભર્યા પછી જ) ----------------
+    # ---------------- ૩. ફાઈલ અપલોડ ----------------
     if student_name and std != "પસંદ કરો":
         st.subheader("૩. ફોટો અપલોડ કરો")
 
@@ -96,7 +96,7 @@ if priority != "પસંદ કરો":
                             st.markdown(analysis_text)
                             st.divider()
 
-                            # બધું Excel માટે સેવ કરો
+                            # સેવ કરો (પણ બીજાને ન બતાવો)
                             st.session_state.records.append({
                                 "તારીખ": datetime.now().strftime("%d-%m-%Y %H:%M"),
                                 "પ્રાધાન્ય": priority,
@@ -109,15 +109,13 @@ if priority != "પસંદ કરો":
                         except Exception as e:
                             st.error(f"ફોટો {i+1} માં ભૂલ: {e}")
 
-# ---------------- Excel ડાઉનલોડ ----------------
+# ---------------- Excel ડાઉનલોડ (ફક્ત ડાઉનલોડ બટન, ટેબલ નહીં) ----------------
 if st.session_state.records:
-    st.subheader("📊 સેવ થયેલ બધા રેસ્પોન્સ")
-
-    df = pd.DataFrame(st.session_state.records)
-    st.dataframe(df, use_container_width=True)
+    st.success(f"✅ કુલ {len(st.session_state.records)} રેસ્પોન્સ સેવ થયા છે")
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df = pd.DataFrame(st.session_state.records)
         df.to_excel(writer, index=False, sheet_name="Analysis")
     excel_data = output.getvalue()
 
