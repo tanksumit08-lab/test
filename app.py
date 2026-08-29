@@ -1,6 +1,7 @@
 import streamlit as st
 from google import genai
 from PIL import Image
+import requests
 from datetime import datetime
 
 # ---------------- Page Config ----------------
@@ -8,14 +9,43 @@ st.set_page_config(page_title="સ્કૂલ એનાલિસિસ ટૂ�
 st.title("🏫 સ્કૂલ કામગીરી પત્રક એનાલિસિસ ટૂલ")
 st.write("તમારા સ્કૂલના લિસ્ટ કે પત્રકનો ફોટો અપલોડ કરો અને ટૂંકમાં વિશ્લેષણ મેળવો.")
 
-# ---------------- API Key ----------------
+# ---------------- Secrets ----------------
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
+    TELEGRAM_BOT_TOKEN = st.secrets["TELEGRAM_BOT_TOKEN"]
+    TELEGRAM_CHAT_ID = st.secrets["TELEGRAM_CHAT_ID"]
 except Exception:
-    st.error("મહેરબાની કરીને Gemini API Key સેટ કરો.")
+    st.error("મહેરબાની કરીને Secrets સેટ કરો.")
     st.stop()
 
 client = genai.Client(api_key=api_key)
+
+# ---------------- Telegram મોકલવાનું ફંક્શન ----------------
+def send_to_telegram(priority, student_name, std, file_name, analysis_text):
+    message = f"""
+🏫 *નવું રેસ્પોન્સ મળ્યું*
+
+📅 તારીખ: {datetime.now().strftime("%d-%m-%Y %H:%M")}
+🎯 પ્રાધાન્ય: {priority}
+👶 બાળકનું નામ: {student_name}
+📚 ધોરણ: {std}
+📄 ફાઈલ: {file_name}
+
+---------- એનાલિસિસ ----------
+{analysis_text}
+"""
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+    try:
+        requests.post(url, data=payload)
+        return True
+    except Exception as e:
+        st.error(f"Telegram મોકલવામાં ભૂલ: {e}")
+        return False
 
 # ---------------- ૧. પ્રાધાન્યનો પ્રશ્ન ----------------
 st.subheader("૧. તમે શિક્ષણમાં શેનું પ્રાધાન્ય આપો છો?")
@@ -89,6 +119,18 @@ if priority != "પસંદ કરો":
                             st.success(f"✅ ફોટો {i+1} ({uploaded_file.name}) નું એનાલિસિસ તૈયાર છે!")
                             st.markdown(analysis_text)
                             st.divider()
+
+                            # Telegram પર મોકલો
+                            sent = send_to_telegram(
+                                priority=priority,
+                                student_name=student_name,
+                                std=std,
+                                file_name=uploaded_file.name,
+                                analysis_text=analysis_text
+                            )
+
+                            if sent:
+                                st.success("📱 રેસ્પોન્સ Telegram પર મોકલાઈ ગયું છે!")
 
                         except Exception as e:
                             st.error(f"ફોટો {i+1} માં ભૂલ: {e}")
