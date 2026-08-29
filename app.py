@@ -5,9 +5,9 @@ import requests
 from datetime import datetime
 
 # ---------------- Page Config ----------------
-st.set_page_config(page_title="સ્કૂલ એનાલિસિસ ટૂલ", page_icon="🏫")
-st.title("🏫 સ્કૂલ કામગીરી પત્રક એનાલિસિસ ટૂલ")
-st.write("તમારા સ્કૂલના લિસ્ટ કે પત્રકનો ફોટો અપલોડ કરો અને ટૂંકમાં વિશ્લેષણ મેળવો.")
+st.set_page_config(page_title="જિરા સ્કૂલ વિશ્લેષણ", page_icon="🏫")
+st.title("🏫 જિરા સ્કૂલમાંથી બાળકોને લખી અપેલ ૩૦ થી ૪૦ મુદ્દાનું વિશ્લેષણ")
+st.write("બાળકોએ લખેલા મુદ્દાઓના ફોટા અપલોડ કરો અને એકસાથે વિશ્લેષણ મેળવો.")
 
 # ---------------- Secrets ----------------
 try:
@@ -21,7 +21,7 @@ except Exception:
 client = genai.Client(api_key=api_key)
 
 # ---------------- Telegram મોકલવાનું ફંક્શન ----------------
-def send_to_telegram(priority, student_name, std, file_name, analysis_text):
+def send_to_telegram(priority, student_name, std, file_names, analysis_text):
     message = f"""
 🏫 *નવું રેસ્પોન્સ મળ્યું*
 
@@ -29,7 +29,7 @@ def send_to_telegram(priority, student_name, std, file_name, analysis_text):
 🎯 પ્રાધાન્ય: {priority}
 👶 બાળકનું નામ: {student_name}
 📚 ધોરણ: {std}
-📄 ફાઈલ: {file_name}
+📄 ફાઈલો: {file_names}
 
 ---------- એનાલિસિસ ----------
 {analysis_text}
@@ -73,7 +73,7 @@ if priority != "પસંદ કરો":
         st.subheader("૩. ફોટો અપલોડ કરો")
 
         uploaded_files = st.file_uploader(
-            "શાળાની કામગીરીની યાદીના ફોટા અહીં અપલોડ કરો (એકસાથે ઘણા પણ સિલેક્ટ કરી શકો છો)",
+            "બાળકોએ લખેલા મુદ્દાઓના ફોટા અહીં અપલોડ કરો (એકસાથે ઘણા પણ સિલેક્ટ કરી શકો છો)",
             type=["jpg", "jpeg", "png"],
             accept_multiple_files=True
         )
@@ -81,14 +81,15 @@ if priority != "પસંદ કરો":
         if uploaded_files:
             st.write(f"**કુલ {len(uploaded_files)} ફાઈલ અપલોડ થઈ છે**")
 
+            # બધા ફોટા બતાવો
             for i, uploaded_file in enumerate(uploaded_files):
                 image = Image.open(uploaded_file)
                 st.image(image, caption=f"ફોટો {i+1}: {uploaded_file.name}", use_container_width=True)
 
-            if st.button("બધાનું એનાલિસિસ કરો 🚀"):
+            if st.button("બધાનું એકસાથે એનાલિસિસ કરો 🚀"):
 
                 prompt = """
-                આ ફોટામાં આપેલા તમામ મુદ્દાઓને ધ્યાનથી વાંચો અને તેને માત્ર ૩ કેટેગરીમાં વહેંચીને ટકાવારી (Percentage) સાથે ટૂંકું વિશ્લેષણ આપો:
+                આ બધા ફોટામાં આપેલા તમામ મુદ્દાઓને ધ્યાનથી વાંચો અને તેને માત્ર ૩ કેટેગરીમાં વહેંચીને ટકાવારી (Percentage) સાથે ટૂંકું વિશ્લેષણ આપો:
                 ૧. 📚 મૂળભૂત શિક્ષણ
                 ૨. 🏫 શૈક્ષણિક સુવિધા
                 ૩. 🎯 પ્રવૃત્તિ / વહીવટ / ઉજવણી
@@ -104,33 +105,37 @@ if priority != "પસંદ કરો":
                 “સુવિધા બાળકને સગવડ આપે છે, પરંતુ ગુણવત્તાયુક્ત શિક્ષણ બાળકનું ભવિષ્ય ઘડે છે.”
                 """
 
-                for i, uploaded_file in enumerate(uploaded_files):
-                    with st.spinner(f"ફોટો {i+1} નું એનાલિસિસ થઈ રહ્યું છે..."):
-                        try:
-                            image = Image.open(uploaded_file)
+                with st.spinner("બધા ફોટાનું એકસાથે એનાલિસિસ થઈ રહ્યું છે..."):
+                    try:
+                        # બધા ફોટા એકસાથે મોકલો
+                        images = [Image.open(f) for f in uploaded_files]
+                        contents = [prompt] + images
 
-                            response = client.models.generate_content(
-                                model="gemini-3.6-flash",
-                                contents=[prompt, image]
-                            )
+                        response = client.models.generate_content(
+                            model="gemini-3.6-flash",
+                            contents=contents
+                        )
 
-                            analysis_text = response.text
+                        analysis_text = response.text
 
-                            st.success(f"✅ ફોટો {i+1} ({uploaded_file.name}) નું એનાલિસિસ તૈયાર છે!")
-                            st.markdown(analysis_text)
-                            st.divider()
+                        st.success("✅ બધા ફોટાનું એકસાથે એનાલિસિસ તૈયાર છે!")
+                        st.markdown(analysis_text)
+                        st.divider()
 
-                            # Telegram પર મોકલો
-                            sent = send_to_telegram(
-                                priority=priority,
-                                student_name=student_name,
-                                std=std,
-                                file_name=uploaded_file.name,
-                                analysis_text=analysis_text
-                            )
+                        # ફાઈલ નામો
+                        file_names = ", ".join([f.name for f in uploaded_files])
 
-                            if sent:
-                                st.success("📱 રેસ્પોન્સ Telegram પર મોકલાઈ ગયું છે!")
+                        # Telegram પર મોકલો
+                        sent = send_to_telegram(
+                            priority=priority,
+                            student_name=student_name,
+                            std=std,
+                            file_names=file_names,
+                            analysis_text=analysis_text
+                        )
 
-                        except Exception as e:
-                            st.error(f"ફોટો {i+1} માં ભૂલ: {e}")
+                        if sent:
+                            st.success("📱 રેસ્પોન્સ Telegram પર મોકલાઈ ગયું છે!")
+
+                    except Exception as e:
+                        st.error(f"ભૂલ: {e}")
