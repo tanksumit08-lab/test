@@ -7,11 +7,10 @@ st.set_page_config(page_title="સ્કૂલ એનાલિસિસ ટૂ�
 st.title("🏫 સ્કૂલ કામગીરી પત્રક એનાલિસિસ ટૂલ")
 st.write("તમારા સ્કૂલના લિસ્ટ કે પત્રકનો ફોટો અપલોડ કરો અને ટૂંકમાં વિશ્લેષણ મેળવો.")
 
-# 2. Gemini API Key સેટअप (અહીં તમારી API Key મૂકવી અથવા Streamlit Secrets નો ઉપયોગ કરવો)
-# st.secrets ["GEMINI_API_KEY"] નો ઉપયોગ કરવો વધારે સુરક્ષિત છે.
-api_key = st.secrets.get("AQ.Ab8RN6KeEFWBBFI5W_jYiPZcF6BPWO_h4iiSlMJvJdh5R2QHag", "")
-
-if not api_key:
+# 2. Gemini API Key સેટઅપ (Streamlit Secrets માંથી)
+try:
+    api_key = st.secrets["AQ.Ab8RN6KeEFWBBFI5W_jYiPZcF6BPWO_h4iiSlMJvJdh5R2QHag"]
+except Exception:
     st.error("મહેરબાની કરીને Gemini API Key સેટ કરો.")
     st.stop()
 
