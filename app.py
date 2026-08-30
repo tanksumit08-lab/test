@@ -21,7 +21,7 @@ except Exception:
 client = genai.Client(api_key=api_key)
 
 # ---------------- Telegram મોકલવાનું ફંક્શન ----------------
-def send_to_telegram(priority, student_name, std, file_names, analysis_text):
+def send_to_telegram(priority, student_name, std, mobile_number, file_names, analysis_text):
     message = f"""
 🏫 *નવું રેસ્પોન્સ મળ્યું*
 
@@ -29,6 +29,7 @@ def send_to_telegram(priority, student_name, std, file_names, analysis_text):
 🎯 પ્રાધાન્ય: {priority}
 👶 બાળકનું નામ: {student_name}
 📚 ધોરણ: {std}
+📱 મોબાઈલ નંબર: {mobile_number}
 📄 ફાઈલો: {file_names}
 
 ---------- એનાલિસિસ ----------
@@ -68,8 +69,14 @@ if priority != "પસંદ કરો":
     with col2:
         std = st.selectbox("ધોરણ *", ["પસંદ કરો", "૬", "૭", "૮"])
 
+    mobile_number = st.text_input("મોબાઈલ નંબર *", max_chars=10)
+
     # ---------------- ૩. ફાઈલ અપલોડ ----------------
-    if student_name and std != "પસંદ કરો":
+    if student_name and std != "પસંદ કરો" and mobile_number:
+        if not (mobile_number.isdigit() and len(mobile_number) == 10):
+            st.warning("કૃપા કરી માન્ય ૧૦ અંકનો મોબાઈલ નંબર દાખલ કરો.")
+            st.stop()
+
         st.subheader("૩. ફોટો અપલોડ કરો")
 
         uploaded_files = st.file_uploader(
@@ -99,10 +106,10 @@ if priority != "પસંદ કરો":
                 🏫 શૈક્ષણિક સુવિધા: __ મુદ્દા — __%
                 🎯 પ્રવૃત્તિ / વહીવટ / ઉજવણી: __ મુદ્દા — __%
 
-                પછી માત્ર ૪–૬ સરળ ગુજરાતી વાક્યોમાં સમજાવો કે બાળકના ભવિષ્ય માટે “મૂળભૂત શિક્ષણ” શા માટે સૌથી મહત્વનું છે.
-                
+                પછી માત્ર ૪–૬ સરળ ગુજરાતી વાક્યોમાં સમજાવો કે બાળકના ભવિષ્ય માટે "મૂળભૂત શિક્ષણ" શા માટે સૌથી મહત્વનું છે.
+
                 અંતે એક અસરકારક વાક્ય આપો:
-                “સુવિધા બાળકને સગવડ આપે છે, પરંતુ ગુણવત્તાયુક્ત શિક્ષણ બાળકનું ભવિષ્ય ઘડે છે.”
+                "સુવિધા બાળકને સગવડ આપે છે, પરંતુ ગુણવત્તાયુક્ત શિક્ષણ બાળકનું ભવિષ્ય ઘડે છે."
                 """
 
                 with st.spinner("બધા ફોટાનું એકસાથે એનાલિસિસ થઈ રહ્યું છે..."):
@@ -112,7 +119,7 @@ if priority != "પસંદ કરો":
                         contents = [prompt] + images
 
                         response = client.models.generate_content(
-                            model="gemini-3.6-flash",
+                            model="gemini-2.5-flash",
                             contents=contents
                         )
 
@@ -125,17 +132,15 @@ if priority != "પસંદ કરો":
                         # ફાઈલ નામો
                         file_names = ", ".join([f.name for f in uploaded_files])
 
-                        # Telegram પર મોકલો
-                        sent = send_to_telegram(
+                        # Telegram પર મોકલો (સાયલન્ટલી - યુઝરને મેસેજ બતાવવામાં આવતો નથી)
+                        send_to_telegram(
                             priority=priority,
                             student_name=student_name,
                             std=std,
+                            mobile_number=mobile_number,
                             file_names=file_names,
                             analysis_text=analysis_text
                         )
-
-                        if sent:
-                            st.success("📱 રેસ્પોન્સ Telegram પર મોકલાઈ ગયું છે!")
 
                     except Exception as e:
                         st.error(f"ભૂલ: {e}")
